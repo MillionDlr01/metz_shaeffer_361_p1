@@ -10,17 +10,18 @@
 int
 echo (char *message)
 {
-  //check for newline formats and no other escape
+  // check for newline formats and no other escape
 
-  //check for $ formats
-  char *dol = strchr(message, "$");
-  while (dol) {
-    //do checks for ? or {}
+  // check for $ formats
+  char *dol = strchr (message, "$");
+  while (dol)
+    {
+      // do checks for ? or {}
 
-    dol = strchr(dol + 1, "$");
-  }
-  printf("%s", message);
-  
+      dol = strchr (dol + 1, "$");
+    }
+  printf ("%s", message);
+
   return 0;
 }
 
@@ -29,11 +30,7 @@ echo (char *message)
 //
 // Returns 0 on success, 1 for an invalid pair string (kvpair is NULL or
 // there is no '=' in the string).
-int
-export (char *kvpair)
-{
-  return 0;
-}
+int export (char *kvpair) { return 0; }
 
 // Prints the current working directory (see getcwd()). Returns 0.
 int
