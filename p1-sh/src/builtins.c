@@ -10,6 +10,17 @@
 int
 echo (char *message)
 {
+  //check for newline formats and no other escape
+
+  //check for $ formats
+  char *dol = strchr(message, "$");
+  while (dol) {
+    //do checks for ? or {}
+
+    dol = strchr(dol + 1, "$");
+  }
+  printf("%s", message);
+  
   return 0;
 }
 
