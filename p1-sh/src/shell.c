@@ -1,12 +1,12 @@
 #include <assert.h>
-#include <stdio.h>
-#include <string.h>
-#include <wait.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <wait.h>
 
 #include "builtins.h"
 #include "hash.h"
@@ -28,10 +28,11 @@ shell (FILE *input)
 {
   hash_init (100);
   hash_insert ("?", "0");
-  char cwdbuf[256]; //use to store result of getcwd for default CWD
-  getcwd(cwdbuf, 256);
+  char cwdbuf[256]; // use to store result of getcwd for default CWD
+  getcwd (cwdbuf, 256);
   hash_insert ("CWD", cwdbuf);
-  hash_insert ("PATH", "/cs/home/stu/metzza/cs361/metz_shaeffer_361_p1/p1-sh/utils,");
+  hash_insert ("PATH",
+               "/cs/home/stu/metzza/cs361/metz_shaeffer_361_p1/p1-sh/utils,");
   char buffer[MAXLENGTH + 1];
   while (1)
     {
@@ -43,9 +44,6 @@ shell (FILE *input)
 
       /* Get the command for this line without any arguments */
       char *command = strtok (buffer, WHITESPACE);
-      if (!strncmp(command, "quit", 4)) {
-        exit(EXIT_SUCCESS);
-      }
 
       /* Get the array of arguments and determine the output file
          to use (if the line ends with "> output" redirection). */
@@ -61,7 +59,14 @@ shell (FILE *input)
 
       /* Copy the command name as the first argument */
       arg_list[0] = command;
-
+      if (!command)
+        {
+          continue;
+        }
+      if (strlen (command) >= 4 && !strncmp (command, "quit", 4))
+        {
+          exit (EXIT_SUCCESS);
+        }
       /* Create the child process and execute the command in it */
       pid_t child_pid = fork ();
       assert (child_pid >= 0);
@@ -110,7 +115,7 @@ run_child_process (char *command, char **arg_list, char *output_file)
       fchmod (out_fd, 0644);
       dup2 (out_fd, STDOUT_FILENO);
     }
-  exit(0);
+  exit (0);
   /* Use execvp, because we are not doing a PATH lookup and the
      arguments are in a dynamically allocated array */
   // execvp (command, arg_list);  //change from here to instead call our method
