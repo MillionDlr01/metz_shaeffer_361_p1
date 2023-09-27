@@ -19,8 +19,8 @@
    whitespace between tokens */
 #define WHITESPACE " \t\n\r"
 
-void run_child_process (char *, char **, char *);
-char **tokenize_arguments (char *, char **);
+void run_child_process (char *, char **, size_t, char *);
+char **tokenize_arguments (char *, char **, size_t *);
 char **get_out_name (char *, char **, char **);
 
 void
@@ -48,7 +48,8 @@ shell (FILE *input)
       /* Get the array of arguments and determine the output file
          to use (if the line ends with "> output" redirection). */
       char *output = NULL;
-      char **arg_list = tokenize_arguments (buffer, &output);
+      size_t argc;
+      char **arg_list = tokenize_arguments (buffer, &output, &argc);
 
       /* If something went wrong, skip this line */
       if (arg_list == NULL)
@@ -61,6 +62,7 @@ shell (FILE *input)
       arg_list[0] = command;
       if (!command)
         {
+          printf("no command\n");
           continue;
         }
       if (strlen (command) == 4 && !strncmp (command, "quit", 4))
@@ -77,12 +79,13 @@ shell (FILE *input)
         }
       else
         {
+          // printf("HERE");
           /* Create the child process and execute the command in it */
           pid_t child_pid = fork ();
           assert (child_pid >= 0);
           if (child_pid == 0)
             {
-              run_child_process (command, arg_list, output);
+              run_child_process (command, arg_list, argc, output);
             }
 
           if (input != stdin)
@@ -106,7 +109,7 @@ shell (FILE *input)
    ">out"), then output_file is the name of the file to create.
    Otherwise, output_file is NULL. Should never return. */
 void
-run_child_process (char *command, char **arg_list, char *output_file)
+run_child_process (char *command, char **arg_list, size_t argc, char *output_file)
 {
   int out_fd = -1;
 
@@ -126,11 +129,17 @@ run_child_process (char *command, char **arg_list, char *output_file)
       fchmod (out_fd, 0644);
       dup2 (out_fd, STDOUT_FILENO);
     }
-  echo (command);
+    // printf("|%s|", command);
+    if (!strncmp (command, "echo", 4)) {
+      // echo(collapse_args(arg_list + 1, argc - 1));
+      echo(collapse_args(arg_list + 1, argc - 1));
+    } else if (!strncmp (command, "pwd", 3)) {
+      pwd();
+    }
   exit (0);
   /* Use execvp, because we are not doing a PATH lookup and the
      arguments are in a dynamically allocated array */
-  // execvp (command, arg_list);  //change from here to instead call our method
+  // execvp (command, arg_list);
 
   /* Should never reach here. Print an error message, free up
      resources, and exit. */
@@ -146,11 +155,12 @@ run_child_process (char *command, char **arg_list, char *output_file)
    redirection, update the output_file pointer to point to the name
    of the file to use. */
 char **
-tokenize_arguments (char *buffer, char **output_file)
+tokenize_arguments (char *buffer, char **output_file, size_t *n)  //put number of args in n
 {
   assert (buffer != NULL);
   assert (output_file != NULL);
   char *token = NULL;
+  *n = 1;
 
   /* Allocate an initial array for 10 arguments; this can grow
      later if needed */
@@ -163,6 +173,7 @@ tokenize_arguments (char *buffer, char **output_file)
 
   while ((token = strtok (NULL, WHITESPACE)) != NULL)
     {
+      *n = *n + 1;
       /* If token starts with >, it is an output redirection. The
          rest of the line must be the file name. Need to pass both
          the rest of the token and the buffer, as there might not

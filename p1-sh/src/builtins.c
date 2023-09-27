@@ -29,7 +29,7 @@ echo (char *message)
     }
 
   // check for $ formats
-  char *dol = strchr (buffer, '$');
+  /*char *dol = strchr (buffer, '$');
   char temp[101];
   while (dol)
     {
@@ -58,7 +58,7 @@ echo (char *message)
           return 1;
         }
       dol = strchr (dol + 1, '$');
-    }
+    }*/
   printf ("%s\n", buffer);
 
   return 0;

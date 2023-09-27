@@ -8,5 +8,14 @@
 //   - determining if a command is a built-in or executable
 //   - running a single command in a second process
 //   - running a pair of commands that are connected with a pipe
+char *path_lookup (char *filename);
+
+bool check_builtin (char *filename);
+
+int exec_cmd (char *filename);
+
+int pipe_cmd (char *prgm1, char *prgm2);
+
+char *collapse_args (char **args, size_t argc);
 
 #endif
