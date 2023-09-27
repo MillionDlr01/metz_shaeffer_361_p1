@@ -22,6 +22,7 @@
 void run_child_process (char *, char **, size_t, char *);
 char **tokenize_arguments (char *, char **, size_t *);
 char **get_out_name (char *, char **, char **);
+int setup_output_file (char *);
 
 void
 shell (FILE *input)
@@ -62,7 +63,7 @@ shell (FILE *input)
       arg_list[0] = command;
       if (!command)
         {
-          printf("no command\n");
+          printf ("no command\n");
           continue;
         }
       if (strlen (command) == 4 && !strncmp (command, "quit", 4))
@@ -73,29 +74,18 @@ shell (FILE *input)
         {
           char cwd[256];
           getcwd (cwd, 256);
-          strcat(cwd, "/");
+          strcat (cwd, "/");
           strcat (cwd, arg_list[1]);
           chdir (cwd);
         }
       else
         {
-          // printf("HERE");
-          /* Create the child process and execute the command in it */
-          pid_t child_pid = fork ();
-          assert (child_pid >= 0);
-          if (child_pid == 0)
-            {
-              run_child_process (command, arg_list, argc, output);
-            }
-
           if (input != stdin)
             {
               printf ("%s", buffer);
             }
+          run_child_process (command, arg_list, argc, output);
 
-          /* Parent waits for the child, then frees up allocated memory
-           for the argument list and moves on to the next line */
-          wait (NULL);
           free (arg_list);
         }
     }
@@ -103,51 +93,81 @@ shell (FILE *input)
   hash_destroy ();
 }
 
-/* Runs a command in an already created child process. The command
+/* Runs a command in child process this method creates. The command
    string should already be copied as the first argument in the
    list. If the user typed an output redirection ("> out" or
    ">out"), then output_file is the name of the file to create.
-   Otherwise, output_file is NULL. Should never return. */
+   Otherwise, output_file is NULL. Should never return.
+   Use posix spawn for utility files, and just call builtins*/
 void
-run_child_process (char *command, char **arg_list, size_t argc, char *output_file)
+run_child_process (char *command, char **arg_list, size_t argc,
+                   char *output_file)
 {
-  int out_fd = -1;
-
-  /* If there is a specified output file, open it and redirect
-     STDOUT to write to this file */
-  if (output_file != NULL)
+  if (check_builtin (command))
     {
-      out_fd = open (output_file, O_RDWR | O_CREAT);
-      if (out_fd < 0)
+      // fork builtin
+      if (fork () == 0)
         {
-          fprintf (stderr, "-bash-lite: failed to open file %s\n",
-                   output_file);
-          exit (EXIT_FAILURE);
+          int out_fd = setup_output_file (output_file);
+          if (!strncmp (command, "echo", 4))
+            {
+              // echo(collapse_args(arg_list + 1, argc - 1));
+              echo (collapse_args (arg_list + 1, argc - 1));
+            }
+          else if (!strncmp (command, "pwd", 3))
+            {
+              pwd ();
+            }
+          if (out_fd > 0)
+            {
+              close (out_fd);
+            }
+          exit (0);
         }
+      else
+        {
+          wait (NULL);
+          return;
+        }
+    }
+  else
+    {
+      // posix spawn utility
+      setup_output_file (output_file);
+    }
 
-      /* Make the file readable and redirect STDOUT */
-      fchmod (out_fd, 0644);
-      dup2 (out_fd, STDOUT_FILENO);
-    }
-    // printf("|%s|", command);
-    if (!strncmp (command, "echo", 4)) {
-      // echo(collapse_args(arg_list + 1, argc - 1));
-      echo(collapse_args(arg_list + 1, argc - 1));
-    } else if (!strncmp (command, "pwd", 3)) {
-      pwd();
-    }
-  exit (0);
   /* Use execvp, because we are not doing a PATH lookup and the
      arguments are in a dynamically allocated array */
   // execvp (command, arg_list);
 
   /* Should never reach here. Print an error message, free up
      resources, and exit. */
-  // fprintf (stderr, "-bash-lite: %s: command not found\n", command);
-  // free (arg_list);
-  // if (out_fd >= 0)
-  //   close (out_fd);
-  // exit (EXIT_FAILURE);
+  fprintf (stderr, "-bash-lite: %s: command not found\n", command);
+  free (arg_list);
+  exit (EXIT_FAILURE);
+}
+
+int
+setup_output_file (char *file)
+{
+  int out_fd = -1;
+  /* If there is a specified output file, open it and redirect
+     STDOUT to write to this file */
+  if (file != NULL)
+    {
+      out_fd = open (file, O_RDWR | O_CREAT);
+      if (out_fd < 0)
+        {
+          fprintf (stderr, "-bash-lite: failed to open file %s\n", file);
+          exit (EXIT_FAILURE);
+        }
+
+      /* Make the file readable and redirect STDOUT */
+      fchmod (out_fd, 0644);
+      dup2 (out_fd, STDOUT_FILENO);
+      return out_fd;
+    }
+  return 0;
 }
 
 /* Given a command line (buffer), create the list of arguments to
@@ -155,7 +175,8 @@ run_child_process (char *command, char **arg_list, size_t argc, char *output_fil
    redirection, update the output_file pointer to point to the name
    of the file to use. */
 char **
-tokenize_arguments (char *buffer, char **output_file, size_t *n)  //put number of args in n
+tokenize_arguments (char *buffer, char **output_file,
+                    size_t *n) // put number of args in n
 {
   assert (buffer != NULL);
   assert (output_file != NULL);

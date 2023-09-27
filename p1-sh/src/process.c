@@ -19,7 +19,7 @@ path_lookup (char *filename)
 bool
 check_builtin (char *filename)
 { // return true if program is a built in
-  return false;
+  return true;
 }
 
 int
