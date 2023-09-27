@@ -15,25 +15,46 @@
 int
 echo (char *message)
 {
-  char buffer[101]; //TODO - replace all white space with single space
-  strncpy(buffer, message, 100);
+  char buffer[101]; // TODO - replace all white space with single space
+  strncpy (buffer, message, 100);
   // check for newline formats and no other escape
-  char *newl = strstr(buffer, "\\n");
-  while (newl) {
-    newl[0] = '\n';
-    memmove(newl + 1, newl + 2, strlen(newl) - 1);
-    newl = strstr(newl + 1, "\\n");
-  }
+  char *newl = strstr (buffer, "\\n");
+  while (newl)
+    {
+      newl[0] = '\n';
+      memmove (newl + 1, newl + 2, strlen (newl) - 1);
+      newl = strstr (newl + 1, "\\n");
+    }
 
   // check for $ formats
   char *dol = strchr (buffer, '$');
+  char temp[101];
   while (dol)
     {
       // do checks for ? or {}
-      if (strlen(dol) >= 2 && dol[1] == '?') {
-        
-      }
-
+      if (strlen (dol) >= 2 && dol[1] == '?')
+        {
+          dol[0] = '0' + hash_find ("?");
+          memmove (dol + 1, dol + 2, strlen (dol) - 1);
+        }
+      else if (strlen (dol) >= 2 && dol[1] == '{')
+        {
+          size_t len = 0;
+          char *endbrace = strchr (dol, '}');
+          char *dolt = dol + 2;
+          while (dolt != endbrace)
+            {
+              len += 1;
+              dolt += 1;
+            }
+          snprintf (temp, len, "%s", dol);
+          char *res = hash_find (temp);
+          // TODO - replace index with res
+        }
+      else
+        {
+          return 1;
+        }
       dol = strchr (dol + 1, '$');
     }
   printf ("%s\n", buffer);
@@ -52,7 +73,9 @@ int export (char *kvpair) { return 0; }
 int
 pwd (void)
 {
-  printf("%s", hash_find("CWD")); //prints the global var called CWD
+  char buffer[256];
+  getcwd (buffer, 256);
+  printf ("%s", buffer);
   return 0;
 }
 
@@ -61,11 +84,12 @@ pwd (void)
 int
 unset (char *key)
 {
-  char *val = hash_find(key);
-  if (!val || strncmp("CWD", key, 3) == 0 || strncmp("PATH", key, 4) == 0) {  //error if value is null, or key is CWD or PATH
-    return 1;
-  }
-  hash_remove(key);
+  char *val = hash_find (key);
+  if (!val || strncmp ("CWD", key, 3) == 0 || strncmp ("PATH", key, 4) == 0)
+    { // error if value is null, or key is CWD or PATH
+      return 1;
+    }
+  hash_remove (key);
   return 0;
 }
 
@@ -78,18 +102,5 @@ unset (char *key)
 int
 which (char *cmdline)
 {
-  return 0;
-}
-
-
-int
-cd (char *path)   //not sure why this wasn't stubbed already?
-{
-  if (!path) {
-    return 1;
-  }
-  char cwd[256];
-  snprintf(cwd, 256, "%s", hash_find("CWD"));
-  hash_insert("CWD", strcat(cwd, path));  //TODO - improve this to actually remove dirs for .. backtracking
   return 0;
 }
