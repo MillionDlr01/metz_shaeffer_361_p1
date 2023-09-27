@@ -68,14 +68,9 @@ main (int argc, char *argv[])
           char buffer[LINELEN + 1];
           memset (buffer, 0, LINELEN + 1);
           // read line
-          fread (buffer, sizeof (char), LINELEN, file);
+          fgets (buffer, LINELEN, file);
           // print line
-          char *line = strtok (buffer, WHITESPACE);
-          while (line != NULL && i < numLines) {
-            printf ("%s\n", line);
-            line = strtok(NULL, WHITESPACE);
-            i++;
-          }
+          printf ("%s", buffer);
         }
     }
   else
