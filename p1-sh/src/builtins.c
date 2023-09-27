@@ -77,7 +77,7 @@ pwd (void)
 {
   char buffer[256];
   getcwd (buffer, 256);
-  printf ("%s", buffer);
+  printf ("%s\n", buffer);
   return 0;
 }
 
