@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 // Given a message as input, print it to the screen followed by a
 // newline ('\n'). If the message contains the two-byte escape sequence
 // "\\n", print a newline '\n' instead. No other escape sequence is
@@ -36,6 +38,7 @@ int export (char *kvpair) { return 0; }
 int
 pwd (void)
 {
+  printf("%s", hash_find("CWD")); //prints the global var called CWD
   return 0;
 }
 
@@ -44,6 +47,11 @@ pwd (void)
 int
 unset (char *key)
 {
+  char *val = hash_find(key);
+  if (!val || strncmp("CWD", key, 3) == 0 || strncmp("PATH", key, 4) == 0) {  //error if value is null, or key is CWD or PATH
+    return 1;
+  }
+  hash_remove(key);
   return 0;
 }
 
@@ -56,5 +64,17 @@ unset (char *key)
 int
 which (char *cmdline)
 {
+  return 0;
+}
+
+
+int
+cd (char *path)   //not sure why this wasn't stubbed already?
+{
+  if (!path) {
+    return 1;
+  }
+  char cwd[256] = hash_find("CWD");
+  hash_insert("CWD", strcat(cwd, path));  //TODO - improve this to actually remove dirs for .. backtracking
   return 0;
 }

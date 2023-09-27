@@ -13,6 +13,8 @@ shell (FILE *input)
 {
   hash_init (100);
   hash_insert ("?", "0");
+  hash_insert ("CWD", "/");
+  hash_insert ("PATH", "../utils,");
   char buffer[MAXLENGTH];
   while (1)
     {
