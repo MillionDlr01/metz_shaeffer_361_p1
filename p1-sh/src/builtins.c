@@ -87,7 +87,7 @@ int
 unset (char *key)
 {
   char *val = hash_find (key);
-  if (!val || strncmp ("CWD", key, 3) == 0 || strncmp ("PATH", key, 4) == 0)
+  if (!val || strncmp ("PATH", key, 4) == 0)
     { // error if value is null, or key is CWD or PATH
       return 1;
     }
