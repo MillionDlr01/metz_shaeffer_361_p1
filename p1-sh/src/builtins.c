@@ -15,17 +15,28 @@
 int
 echo (char *message)
 {
+  char buffer[101]; //TODO - replace all white space with single space
+  strncpy(buffer, message, 100);
   // check for newline formats and no other escape
+  char *newl = strstr(buffer, "\\n");
+  while (newl) {
+    newl[0] = '\n';
+    memmove(newl + 1, newl + 2, strlen(newl) - 1);
+    newl = strstr(newl + 1, "\\n");
+  }
 
   // check for $ formats
-  char *dol = strchr (message, '$');
+  char *dol = strchr (buffer, '$');
   while (dol)
     {
       // do checks for ? or {}
+      if (strlen(dol) >= 2 && dol[1] == '?') {
+        
+      }
 
       dol = strchr (dol + 1, '$');
     }
-  printf ("%s", message);
+  printf ("%s\n", buffer);
 
   return 0;
 }

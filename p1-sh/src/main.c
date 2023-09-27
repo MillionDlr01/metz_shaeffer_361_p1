@@ -17,11 +17,7 @@ main (int argc, char *argv[])
   return EXIT_SUCCESS;
 }
 
-/* Parse the command-line arguments. Sets the client/server variables to
-   point to a file name (typically in the data/ directory). Can also set
-   the bot variable if a second file is used to interact with the
-   client/server. If -d was passed, turn on debugging mode to print
-   information about state transitions. */
+/* Parse the command-line arguments. */
 static bool
 get_args (int argc, char **argv, FILE **script)
 {

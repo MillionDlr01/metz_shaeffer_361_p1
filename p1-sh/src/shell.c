@@ -115,6 +115,7 @@ run_child_process (char *command, char **arg_list, char *output_file)
       fchmod (out_fd, 0644);
       dup2 (out_fd, STDOUT_FILENO);
     }
+  echo(command);
   exit (0);
   /* Use execvp, because we are not doing a PATH lookup and the
      arguments are in a dynamically allocated array */
