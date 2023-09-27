@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <string.h>
+
+#include "hash.h"
 
 // Given a message as input, print it to the screen followed by a
 // newline ('\n'). If the message contains the two-byte escape sequence
@@ -15,12 +18,12 @@ echo (char *message)
   // check for newline formats and no other escape
 
   // check for $ formats
-  char *dol = strchr (message, "$");
+  char *dol = strchr (message, '$');
   while (dol)
     {
       // do checks for ? or {}
 
-      dol = strchr (dol + 1, "$");
+      dol = strchr (dol + 1, '$');
     }
   printf ("%s", message);
 
@@ -74,7 +77,8 @@ cd (char *path)   //not sure why this wasn't stubbed already?
   if (!path) {
     return 1;
   }
-  char cwd[256] = hash_find("CWD");
+  char cwd[256];
+  snprintf(cwd, 256, "%s", hash_find("CWD"));
   hash_insert("CWD", strcat(cwd, path));  //TODO - improve this to actually remove dirs for .. backtracking
   return 0;
 }

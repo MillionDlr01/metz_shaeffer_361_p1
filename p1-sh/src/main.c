@@ -13,6 +13,7 @@ static void usage (void);
 int
 main (int argc, char *argv[])
 {
+  shell(stdin);
   return EXIT_SUCCESS;
 }
 
