@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 #include "hash.h"
 
@@ -34,7 +36,7 @@ echo (char *message)
       // do checks for ? or {}
       if (strlen (dol) >= 2 && dol[1] == '?')
         {
-          dol[0] = '0' + hash_find ("?");
+          dol[0] = '0' + strtol(hash_find ("?"), NULL, 10);
           memmove (dol + 1, dol + 2, strlen (dol) - 1);
         }
       else if (strlen (dol) >= 2 && dol[1] == '{')

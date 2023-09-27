@@ -63,27 +63,38 @@ shell (FILE *input)
         {
           continue;
         }
-      if (strlen (command) >= 4 && !strncmp (command, "quit", 4))
+      if (strlen (command) == 4 && !strncmp (command, "quit", 4))
         {
           exit (EXIT_SUCCESS);
         }
-      /* Create the child process and execute the command in it */
-      pid_t child_pid = fork ();
-      assert (child_pid >= 0);
-      if (child_pid == 0)
+      else if (strlen (command) == 2 && !strncmp (command, "cd", 2))
         {
-          run_child_process (command, arg_list, output);
+          char cwd[256];
+          getcwd (cwd, 256);
+          strcat(cwd, "/");
+          strcat (cwd, arg_list[1]);
+          chdir (cwd);
         }
-
-      if (input != stdin)
+      else
         {
-          printf ("%s", buffer);
-        }
+          /* Create the child process and execute the command in it */
+          pid_t child_pid = fork ();
+          assert (child_pid >= 0);
+          if (child_pid == 0)
+            {
+              run_child_process (command, arg_list, output);
+            }
 
-      /* Parent waits for the child, then frees up allocated memory
-       for the argument list and moves on to the next line */
-      wait (NULL);
-      free (arg_list);
+          if (input != stdin)
+            {
+              printf ("%s", buffer);
+            }
+
+          /* Parent waits for the child, then frees up allocated memory
+           for the argument list and moves on to the next line */
+          wait (NULL);
+          free (arg_list);
+        }
     }
   printf ("\n");
   hash_destroy ();
@@ -115,7 +126,7 @@ run_child_process (char *command, char **arg_list, char *output_file)
       fchmod (out_fd, 0644);
       dup2 (out_fd, STDOUT_FILENO);
     }
-  echo(command);
+  echo (command);
   exit (0);
   /* Use execvp, because we are not doing a PATH lookup and the
      arguments are in a dynamically allocated array */
