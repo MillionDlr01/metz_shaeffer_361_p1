@@ -8,5 +8,6 @@ int export (char *);
 int pwd (void);
 int unset (char *);
 int which (char *);
+char *which_helper (char *, char *);
 
 #endif

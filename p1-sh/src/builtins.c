@@ -4,7 +4,10 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include "builtins.h"
 #include "hash.h"
+#include "process.h"
+
 
 // Given a message as input, print it to the screen followed by a
 // newline ('\n'). If the message contains the two-byte escape sequence
@@ -112,19 +115,30 @@ which (char *cmdline) //I think we only do single commands, not a bunch like it 
     return 1;
   }
 
-  if (!strncmp(cmdline, "cd", 2) || !strncmp(cmdline, "echo", 4) ||!strncmp(cmdline, "pwd", 3) ||!strncmp(cmdline, "quit", 4) ||!strncmp(cmdline, "which", 5) ||!strncmp(cmdline, "export", 6) ||!strncmp(cmdline, "unset", 5)) {
-    printf("%s: dukesh built-in command\n", cmdline);
-  } else if (strlen(cmdline) >= 2 && cmdline[0] == '.' && cmdline[1] == '/') {
-    struct stat sb;
-      if (stat(cmdline, &sb) == 0 && sb.st_mode & S_IXUSR) {  //test this
-        printf("%s\n", cmdline);
-        return 0;
-      } else {
-        //start checking path, return 1 if not found
-        return 1;
-      }
+  char buf[101];
+  if (which_helper(cmdline, buf) == NULL) {
+    return 1;
+  }
+  if (buf[0] != '.' && buf[0] != '/') {
+    printf("%s: dukesh built-in command\n", buf);
   } else {
-
+    printf("%s\n", buf);
   }
   return 0;
+}
+
+char *which_helper (char *cmdline, char *buf) {  //returns the true command path, just the command name for builtins, ./ for utility, and / for path stuff
+  if (check_builtin(cmdline)) {
+    snprintf(buf, strlen(cmdline) + 1, "%s", cmdline);
+  } else if (strlen(cmdline) >= 2 && cmdline[0] == '.' && cmdline[1] == '/') {
+    struct stat sb;
+      if (stat(cmdline, &sb) == 0 && sb.st_mode & S_IXUSR) {
+        snprintf(buf, strlen(cmdline) + 1, "%s", cmdline );
+      } else {
+        return NULL;
+      }
+  } else {
+    return NULL; //TODO - do path checking
+  }
+  return buf;
 }
