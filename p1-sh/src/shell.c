@@ -153,7 +153,7 @@ run_child_process (char *command, char **arg_list, size_t argc,
       posix_spawn_file_actions_t file_actions;
       pid_t child;
       int s = posix_spawn_file_actions_init (&file_actions);
-      int out_fd;
+      int out_fd = 0;
       if (s != 0)
         {
           return;
