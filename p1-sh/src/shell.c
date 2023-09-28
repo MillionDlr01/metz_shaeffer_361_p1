@@ -130,7 +130,9 @@ run_child_process (char *command, char **arg_list, size_t argc,
           int out_fd = setup_output_file (output_file, true);
           if (!strncmp (command, "echo", 4))
             {
-              echo (collapse_args (arg_list + 1, argc - 1));
+              char *collapsed = collapse_args (arg_list + 1, argc - 1);
+              echo (collapsed);
+              free(collapsed);
             }
           else if (!strncmp (command, "pwd", 3))
             {
