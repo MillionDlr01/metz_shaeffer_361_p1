@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 
 #include "hash.h"
+#include "process.h"
 
 // Given a message as input, print it to the screen followed by a
 // newline ('\n'). If the message contains the two-byte escape sequence
@@ -127,4 +128,20 @@ which (char *cmdline) //I think we only do single commands, not a bunch like it 
 
   }
   return 0;
+}
+
+char *which_helper (char *cmdline, char *buf) {  //returns the true command path, just the command name for builtins, ./ for utility, and / for path stuff
+  if (check_builtin(cmdline)) {
+    snprintf(buf, strlen(cmdline), "%s", cmdline);
+  } else if (strlen(cmdline) >= 2 && cmdline[0] == '.' && cmdline[1] == '/') {
+    struct stat sb;
+      if (stat(cmdline, &sb) == 0 && sb.st_mode & S_IXUSR) {
+        snprintf(buf, strlen(cmdline), "%s", cmdline );
+      } else {
+        return NULL;
+      }
+  } else {
+    return NULL; //TODO - do path checking
+  }
+  return buf;
 }
