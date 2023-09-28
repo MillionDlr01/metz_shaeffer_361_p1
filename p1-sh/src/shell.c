@@ -195,6 +195,7 @@ run_child_process (char *command, char **arg_list, size_t argc,
         {
           return;
         }
+      return;
     }
 
   /* OLD: Use execvp, because we are not doing a PATH lookup and the
