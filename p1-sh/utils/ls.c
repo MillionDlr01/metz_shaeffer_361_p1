@@ -1,3 +1,4 @@
+#include <dirent.h>
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,6 +6,10 @@
 #include <unistd.h>
 
 static void usage (void);
+static void printEntry (struct dirent *, int, int);
+
+// No command line can be more than 100 characters
+#define MAXLENGTH 256
 
 int
 main (int argc, char *argv[])
@@ -17,10 +22,10 @@ main (int argc, char *argv[])
     {
       switch (ch)
         {
-        case 'a': 
+        case 'a':
           hiddenFlag = 1;
           break;
-        case 's': 
+        case 's':
           sizeFlag = 1;
           break;
         default:
@@ -30,31 +35,79 @@ main (int argc, char *argv[])
         }
     }
 
-  // parse optional filename
-  if (optind == argc) // this means no file name was passed, use current working directory
+  // parse optional path
+  if (optind
+      == argc) // this means no path was passed, use current working directory
     {
+      // make directory obj of current directory
+      DIR *directory = opendir (".");
+      if (directory == NULL)
+        {
+          printf ("current directory not reachable.");
+        }
+      // struct for directory entries
+      struct dirent *entry;
 
+      while ((entry = readdir (directory)) != NULL)
+        {
+          printEntry (entry, hiddenFlag, sizeFlag);
+        }
     }
   else if (optind == argc - 1) // this means a file name has been passed
     {
-      char *filename = argv[optind];
-      // attempt to open file
-      FILE *file = fopen (filename, "r");
-      // check that the file was opened
-      if (file == NULL)
+      // get path name argument
+      char *path = argv[optind];
+      // make directory obj based on path arg
+      DIR *directory = opendir (path);
+      if (directory == NULL)
         {
-          printf ("file does not exist");
-          usage ();
-          return EXIT_FAILURE;
+          printf ("provided directory not reachable.");
+        }
+      // struct for directory entries
+      struct dirent *entry;
+
+      while ((entry = readdir (directory)) != NULL)
+        {
+          printEntry (entry, hiddenFlag, sizeFlag);
         }
     }
   else
     { // this means too many args have been passed.
-      printf ("too many non flag args passed");
+      printf ("too many non flag args passed\n");
       usage ();
       return EXIT_FAILURE;
     }
   return EXIT_SUCCESS;
+}
+
+static void
+printEntry (struct dirent *entry, int hiddenFlag, int sizeFlag)
+{
+  if (hiddenFlag == 1)
+    {
+      // this branch will display hidden files
+      if (sizeFlag == 1) // print size of file
+        {
+          printf ("%d ", entry->d_reclen);
+        }
+      // print name followed by a newline
+      printf ("%s", entry->d_name);
+      printf ("\n");
+    }
+  else
+    {
+      // this branch will exclude hidden files
+      if (entry->d_name[0] != '.') // exclude files that begin with '.'
+        {
+          if (sizeFlag == 1) // print size of file
+            {
+              printf ("%d ", entry->d_reclen);
+            }
+          // print name followed by a newline
+          printf ("%s", entry->d_name);
+          printf ("\n");
+        }
+    }
 }
 
 static void
