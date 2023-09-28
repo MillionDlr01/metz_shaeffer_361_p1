@@ -186,7 +186,7 @@ run_child_process (char *command, char **arg_list, size_t argc,
       waitpid (child, &status, 0);
       char statusString [3];
       snprintf(statusString, 3, "%d", status);
-      hash_insert ("?", status);
+      hash_insert ("?", statusString);
       if (out_fd > 0)
         {
           close (out_fd);
