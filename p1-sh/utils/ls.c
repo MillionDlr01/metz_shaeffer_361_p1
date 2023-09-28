@@ -92,7 +92,7 @@ printEntry (struct dirent *entry, int hiddenFlag, int sizeFlag)
         {
           struct stat st;
           stat(entry->d_name, &st);
-          long size = st.st_blksize;
+          long size = st.st_size;
           printf ("%ld ", size);
         }
       // print name followed by a newline
@@ -108,7 +108,7 @@ printEntry (struct dirent *entry, int hiddenFlag, int sizeFlag)
             {
               struct stat st;
               stat(entry->d_name, &st);
-              long size = st.st_blksize;
+              long size = st.st_size;
               printf ("%ld ", size);
             }
           // print name followed by a newline
