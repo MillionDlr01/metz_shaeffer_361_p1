@@ -28,14 +28,14 @@ main (int argc, char *argv[])
           numLines = atoi (optarg);
           break;
         default:
-          printf ("bad argument flag");
+          printf ("bad argument flag\n");
           usage ();
           return EXIT_FAILURE;
         }
     }
 
   // parse optional filename
-  if (optind == argc) // this means no file nam was passed; read from stdin
+  if (optind == argc) // this means no file name was passed; read from stdin
     {
       // get buffer
       char buffer[LINELEN + 1];
@@ -56,7 +56,7 @@ main (int argc, char *argv[])
       // check that the file was opened
       if (file == NULL)
         {
-          printf ("file does not exist");
+          printf ("file does not exist\n");
           usage ();
           return EXIT_FAILURE;
         }
@@ -75,7 +75,7 @@ main (int argc, char *argv[])
     }
   else
     { // this means too many args have been passed.
-      printf ("too many non flag args passed");
+      printf ("too many non flag args passed\n");
       usage ();
       return EXIT_FAILURE;
     }
