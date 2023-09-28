@@ -38,12 +38,19 @@ char *
 collapse_args (char **args, size_t argc)
 { // combine the args into a single string separate by spaces
   char *buffer = calloc (101, sizeof (char));
-  int ind = 0;
+  if (argc < 1) {
+    buffer[0] = '\0';
+    return buffer;
+  }
+  int ind = 1;
+  strcat (buffer, args[0]);
   while (ind < argc)
     {
-      strcat (buffer, args[ind]);
       strcat (buffer, " ");
+      strcat (buffer, args[ind]);
       ind += 1;
     }
+    
+    fflush(stdout);
   return buffer;
 }

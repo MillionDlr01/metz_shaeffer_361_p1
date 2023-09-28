@@ -37,58 +37,67 @@ shell (FILE *input)
   char buffer[MAXLENGTH + 1];
   while (1)
     {
-      memset (buffer, 0, MAXLENGTH + 1);
-      // Print the cursor and get the next command entered
       printf ("$ ");
+      memset (buffer, 0, MAXLENGTH + 1);
       if (fgets (buffer, MAXLENGTH, input) == NULL)
-        break;
+        {
+          break;
+        }
+      if (input != stdin)
+        {
+          printf ("%s", buffer);
+        }
 
-      /* Get the command for this line without any arguments */
       char *command = strtok (buffer, WHITESPACE);
 
-      /* Get the array of arguments and determine the output file
-         to use (if the line ends with "> output" redirection). */
+      //     /* Get the array of arguments and determine the output file
+      //        to use (if the line ends with "> output" redirection). */
       char *output = NULL;
       size_t argc;
       char **arg_list = tokenize_arguments (buffer, &output, &argc);
 
-      /* If something went wrong, skip this line */
       if (arg_list == NULL)
         {
           perror ("-bash: syntax error\n");
           continue;
         }
 
-      /* Copy the command name as the first argument */
       arg_list[0] = command;
       if (!command)
         {
           printf ("no command\n");
           continue;
         }
-      if (strlen (command) == 4 && !strncmp (command, "quit", 4))
+
+      if (!strncmp (command, "quit", 4))
         {
-          exit (EXIT_SUCCESS);
+          break;
         }
-      else if (strlen (command) == 2 && !strncmp (command, "cd", 2))
+      else if (!strncmp (command, "cd", 2))
         {
-          char cwd[256];
-          getcwd (cwd, 256);
-          strcat (cwd, "/");
-          strcat (cwd, arg_list[1]);
-          chdir (cwd);
+          if (arg_list[1][0] == '/')
+            {
+              chdir (arg_list[1]);
+            }
+          else
+            {
+              char cwd[256];
+              getcwd (cwd, 256);
+              strcat (cwd, "/");
+              strcat (cwd, arg_list[1]);
+              chdir (cwd);
+            }
         }
       else
         {
-          if (input != stdin)
-            {
-              printf ("%s", buffer);
-            }
+          fflush (stdout);  //without this, the child process prints the command a second time
           run_child_process (command, arg_list, argc, output);
 
-          free (arg_list);
+          //         free (arg_list);
         }
+      fflush (stdout);
     }
+
   printf ("\n");
   hash_destroy ();
 }
@@ -106,12 +115,12 @@ run_child_process (char *command, char **arg_list, size_t argc,
   if (check_builtin (command))
     {
       // fork builtin
-      if (fork () == 0)
+      pid_t child = fork();
+      if (child == 0)
         {
           int out_fd = setup_output_file (output_file);
           if (!strncmp (command, "echo", 4))
             {
-              // echo(collapse_args(arg_list + 1, argc - 1));
               echo (collapse_args (arg_list + 1, argc - 1));
             }
           else if (!strncmp (command, "pwd", 3))
@@ -133,12 +142,11 @@ run_child_process (char *command, char **arg_list, size_t argc,
   else
     {
       // posix spawn utility
-      setup_output_file (output_file);
+      // setup_output_file (output_file);
     }
 
-  /* Use execvp, because we are not doing a PATH lookup and the
+  /* OLD: Use execvp, because we are not doing a PATH lookup and the
      arguments are in a dynamically allocated array */
-  // execvp (command, arg_list);
 
   /* Should never reach here. Print an error message, free up
      resources, and exit. */

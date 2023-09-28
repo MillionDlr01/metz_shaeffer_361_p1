@@ -13,7 +13,14 @@ static void usage (void);
 int
 main (int argc, char *argv[])
 {
-  shell(stdin);
+  FILE *script = NULL;
+  if (!get_args(argc, argv, &script)) {
+    usage();
+  } else if (script == NULL) {
+    shell(stdin);
+  } else {
+    shell(script);
+  }
   return EXIT_SUCCESS;
 }
 
