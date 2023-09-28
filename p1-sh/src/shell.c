@@ -126,7 +126,10 @@ run_child_process (char *command, char **arg_list, size_t argc,
           else if (!strncmp (command, "pwd", 3))
             {
               pwd ();
+            } else if (!strncmp (command, "which", 5)) {
+              which(arg_list[1]);
             }
+            
           if (out_fd > 0)
             {
               close (out_fd);

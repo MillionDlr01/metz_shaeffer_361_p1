@@ -113,11 +113,11 @@ which (char *cmdline) //I think we only do single commands, not a bunch like it 
   }
 
   if (!strncmp(cmdline, "cd", 2) || !strncmp(cmdline, "echo", 4) ||!strncmp(cmdline, "pwd", 3) ||!strncmp(cmdline, "quit", 4) ||!strncmp(cmdline, "which", 5) ||!strncmp(cmdline, "export", 6) ||!strncmp(cmdline, "unset", 5)) {
-    printf("%s: dukesh built-in command", cmdline);
+    printf("%s: dukesh built-in command\n", cmdline);
   } else if (strlen(cmdline) >= 2 && cmdline[0] == '.' && cmdline[1] == '/') {
     struct stat sb;
       if (stat(cmdline, &sb) == 0 && sb.st_mode & S_IXUSR) {  //test this
-        print(cmdline);
+        printf("%s\n", cmdline);
         return 0;
       } else {
         return 1;
