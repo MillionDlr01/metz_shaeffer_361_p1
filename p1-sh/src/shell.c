@@ -33,8 +33,7 @@ shell (FILE *input)
   char cwdbuf[256]; // use to store result of getcwd for default CWD
   getcwd (cwdbuf, 256);
   hash_insert ("CWD", cwdbuf);
-  hash_insert ("PATH",
-               "/cs/home/stu/metzza/cs361/metz_shaeffer_361_p1/p1-sh/utils,");
+  hash_insert ("PATH", getenv("PATH")); // "/usr/local/sbin:/usr/sbin:etc..."
   char buffer[MAXLENGTH + 1];
   while (1)
     {

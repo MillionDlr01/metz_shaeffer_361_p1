@@ -154,7 +154,13 @@ which_helper (char *cmdline, char *buf)
     }
   else
     {
-      return NULL; // TODO - do path checking
+      char *cmdpath = path_lookup(cmdline);
+          if (!cmdpath) {
+            return NULL;
+          }
+          snprintf(buf, strlen(cmdpath) + 1, "%s", cmdpath);
+          free(cmdpath);
+          return buf;
     }
   return buf;
 }

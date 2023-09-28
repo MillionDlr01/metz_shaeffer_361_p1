@@ -9,11 +9,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
+#include "hash.h"
+
+//make sure to free the return value
 char *
 path_lookup (char *filename)
 { // return the absolute path of the file found in the list of PATH
-  return "";
+  // char *path = hash_find ("PATH");
+  char *path = getenv("PATH");
+  char *curpath = calloc(128, sizeof(char));  
+  char *token;
+  token = strtok (path, ":");
+  while (token != NULL)
+    {
+      strcat (curpath, token);
+      strcat (curpath, "/");
+      strcat (curpath, filename);
+      if (access (curpath, F_OK) == 0)
+        {
+          // file exists
+          return curpath;
+        }
+      memset(curpath, 0, 128);
+      token = strtok (NULL, ":");
+    }
+
+  return NULL;
 }
 
 bool
