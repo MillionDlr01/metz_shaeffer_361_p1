@@ -2,12 +2,12 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 static void usage (void);
-static void printEntry (struct dirent *, int, int);
+static void printEntry (char *, struct dirent *, int, int);
 
 // No command line can be more than 100 characters
 #define MAXLENGTH 256
@@ -30,8 +30,6 @@ main (int argc, char *argv[])
           sizeFlag = 1;
           break;
         default:
-          printf ("bad argument flag");
-          usage ();
           return EXIT_FAILURE;
         }
     }
@@ -44,15 +42,19 @@ main (int argc, char *argv[])
       DIR *directory = opendir (".");
       if (directory == NULL)
         {
-          printf ("current directory not reachable.");
+          return EXIT_FAILURE;
         }
       // struct for directory entries
       struct dirent *entry;
+      // path string for finding files in printentry
+      char path[MAXLENGTH + 1];
+      getcwd (path, 256);
 
       while ((entry = readdir (directory)) != NULL)
         {
-          printEntry (entry, hiddenFlag, sizeFlag);
+          printEntry (path, entry, hiddenFlag, sizeFlag);
         }
+      closedir (directory);
     }
   else if (optind == argc - 1) // this means a file name has been passed
     {
@@ -62,36 +64,39 @@ main (int argc, char *argv[])
       DIR *directory = opendir (path);
       if (directory == NULL)
         {
-          printf ("provided directory not reachable.");
+          return EXIT_FAILURE;
         }
       // struct for directory entries
       struct dirent *entry;
 
       while ((entry = readdir (directory)) != NULL)
         {
-          printEntry (entry, hiddenFlag, sizeFlag);
+          printEntry (path, entry, hiddenFlag, sizeFlag);
         }
+      closedir (directory);
     }
   else
     { // this means too many args have been passed.
-      printf ("too many non flag args passed\n");
-      usage ();
       return EXIT_FAILURE;
     }
   return EXIT_SUCCESS;
 }
 
 static void
-printEntry (struct dirent *entry, int hiddenFlag, int sizeFlag)
+printEntry (char *path, struct dirent *entry, int hiddenFlag, int sizeFlag)
 {
-
   if (hiddenFlag == 1)
     {
       // this branch will display hidden files
       if (sizeFlag == 1) // print size of file
         {
           struct stat st;
-          stat(entry->d_name, &st);
+          char filename [(MAXLENGTH  + 2)* 2];
+          memset (filename, 0, (MAXLENGTH  + 2)* 2);
+          strncat(filename, path, MAXLENGTH);
+          strncat(filename, "/", MAXLENGTH);
+          strncat(filename, entry->d_name, MAXLENGTH);
+          stat (filename, &st);
           long size = st.st_size;
           printf ("%ld ", size);
         }
@@ -107,7 +112,12 @@ printEntry (struct dirent *entry, int hiddenFlag, int sizeFlag)
           if (sizeFlag == 1) // print size of file
             {
               struct stat st;
-              stat(entry->d_name, &st);
+              char filename [(MAXLENGTH  + 2)* 2];
+              memset (filename, 0, (MAXLENGTH  + 2)* 2);
+              strncat(filename, path, MAXLENGTH);
+              strncat(filename, "/", MAXLENGTH);
+              strncat(filename, entry->d_name, MAXLENGTH);
+              stat (filename, &st);
               long size = st.st_size;
               printf ("%ld ", size);
             }
