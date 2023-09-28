@@ -120,6 +120,7 @@ which (char *cmdline) //I think we only do single commands, not a bunch like it 
         printf("%s\n", cmdline);
         return 0;
       } else {
+        //start checking path, return 1 if not found
         return 1;
       }
   } else {

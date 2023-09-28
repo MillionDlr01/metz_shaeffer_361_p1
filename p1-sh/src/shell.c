@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <fcntl.h>
+#include <spawn.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +23,7 @@
 void run_child_process (char *, char **, size_t, char *);
 char **tokenize_arguments (char *, char **, size_t *);
 char **get_out_name (char *, char **, char **);
-int setup_output_file (char *);
+int setup_output_file (char *, bool);
 
 void
 shell (FILE *input)
@@ -90,7 +91,8 @@ shell (FILE *input)
         }
       else
         {
-          fflush (stdout);  //without this, the child process prints the command a second time
+          fflush (stdout); // without this, the child process prints the
+                           // command a second time
           run_child_process (command, arg_list, argc, output);
 
           //         free (arg_list);
@@ -115,10 +117,10 @@ run_child_process (char *command, char **arg_list, size_t argc,
   if (check_builtin (command))
     {
       // fork builtin
-      pid_t child = fork();
+      pid_t child = fork ();
       if (child == 0)
         {
-          int out_fd = setup_output_file (output_file);
+          int out_fd = setup_output_file (output_file, true);
           if (!strncmp (command, "echo", 4))
             {
               echo (collapse_args (arg_list + 1, argc - 1));
@@ -126,10 +128,12 @@ run_child_process (char *command, char **arg_list, size_t argc,
           else if (!strncmp (command, "pwd", 3))
             {
               pwd ();
-            } else if (!strncmp (command, "which", 5)) {
-              which(arg_list[1]);
             }
-            
+          else if (!strncmp (command, "which", 5))
+            {
+              which (arg_list[1]);
+            }
+
           if (out_fd > 0)
             {
               close (out_fd);
@@ -146,6 +150,48 @@ run_child_process (char *command, char **arg_list, size_t argc,
     {
       // posix spawn utility
       // setup_output_file (output_file);
+      posix_spawn_file_actions_t file_actions;
+      pid_t child;
+      int s = posix_spawn_file_actions_init (&file_actions);
+      int out_fd;
+      if (s != 0)
+        {
+          return;
+        }
+      if (output_file)
+        {
+          out_fd = setup_output_file (output_file, false);
+          s = posix_spawn_file_actions_adddup2 (&file_actions, out_fd, 1);
+          if (s != 0)
+            {
+              return;
+            }
+        }
+
+      s = posix_spawn (&child, command, &file_actions, NULL, arg_list,
+                       NULL); // TODO - add envs
+      if (s != 0)
+        {
+          return;
+        }
+      s = posix_spawn_file_actions_destroy (&file_actions);
+      if (s != 0)
+        {
+          return;
+        }
+      // Parent code: read the value back from the pipe into a dynamically
+      // allocated buffer. Wait for the child to exit, then return the
+      // buffer.
+      int status;
+      waitpid (child, &status, 0);
+      if (out_fd > 0)
+        {
+          close (out_fd);
+        }
+      if (status != 0)
+        {
+          return;
+        }
     }
 
   /* OLD: Use execvp, because we are not doing a PATH lookup and the
@@ -159,7 +205,7 @@ run_child_process (char *command, char **arg_list, size_t argc,
 }
 
 int
-setup_output_file (char *file)
+setup_output_file (char *file, bool dup)
 {
   int out_fd = -1;
   /* If there is a specified output file, open it and redirect
@@ -175,7 +221,10 @@ setup_output_file (char *file)
 
       /* Make the file readable and redirect STDOUT */
       fchmod (out_fd, 0644);
-      dup2 (out_fd, STDOUT_FILENO);
+      if (dup)
+        {
+          dup2 (out_fd, STDOUT_FILENO);
+        }
       return out_fd;
     }
   return 0;
