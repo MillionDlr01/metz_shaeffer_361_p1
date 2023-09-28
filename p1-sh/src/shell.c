@@ -60,6 +60,8 @@ shell (FILE *input)
       if (arg_list == NULL)
         {
           perror ("-bash: syntax error\n");
+          fflush (stdout);
+          free (arg_list);
           continue;
         }
 
@@ -67,11 +69,15 @@ shell (FILE *input)
       if (!command)
         {
           printf ("no command\n");
+          fflush (stdout);
+          free (arg_list);
           continue;
         }
 
       if (!strncmp (command, "quit", 4))
         {
+          fflush (stdout);
+          free (arg_list);
           break;
         }
       else if (!strncmp (command, "cd", 2))
@@ -98,6 +104,7 @@ shell (FILE *input)
           //         free (arg_list);
         }
       fflush (stdout);
+      free (arg_list);
     }
 
   printf ("\n");
