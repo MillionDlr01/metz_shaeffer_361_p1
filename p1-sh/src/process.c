@@ -18,7 +18,7 @@ char *
 path_lookup (char *filename)
 { // return the absolute path of the file found in the list of PATH
   // char *path = hash_find ("PATH");
-  char *path = getenv("PATH");
+  char *path = hash_find("PATH");
   char *curpath = calloc(128, sizeof(char));  
   char *token;
   token = strtok (path, ":");
