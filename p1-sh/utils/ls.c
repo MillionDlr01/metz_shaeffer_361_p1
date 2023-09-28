@@ -2,6 +2,7 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -83,12 +84,16 @@ main (int argc, char *argv[])
 static void
 printEntry (struct dirent *entry, int hiddenFlag, int sizeFlag)
 {
+
   if (hiddenFlag == 1)
     {
       // this branch will display hidden files
       if (sizeFlag == 1) // print size of file
         {
-          printf ("%d ", entry->d_reclen);
+          struct stat st;
+          stat(entry->d_name, &st);
+          long size = st.st_blksize;
+          printf ("%ld ", size);
         }
       // print name followed by a newline
       printf ("%s", entry->d_name);
@@ -101,7 +106,10 @@ printEntry (struct dirent *entry, int hiddenFlag, int sizeFlag)
         {
           if (sizeFlag == 1) // print size of file
             {
-              printf ("%d ", entry->d_reclen);
+              struct stat st;
+              stat(entry->d_name, &st);
+              long size = st.st_blksize;
+              printf ("%ld ", size);
             }
           // print name followed by a newline
           printf ("%s", entry->d_name);
