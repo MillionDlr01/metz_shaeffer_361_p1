@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "hash.h"
 
@@ -102,7 +103,27 @@ unset (char *key)
 // Returns 0 if at least one location is found, 1 if no commands were
 // passed or no locations found.
 int
-which (char *cmdline)
+which (char *cmdline) //I think we only do single commands, not a bunch like it says
 {
+  //if builtin: "cmd: dukesh built-in command" assuming cmd is command name
+  //if begins with ./ check if it is executable
+  //otherwise traverse PARTH for a file that matches
+  if (!cmdline) {
+    return 1;
+  }
+
+  if (!strncmp(cmdline, "cd", 2) || !strncmp(cmdline, "echo", 4) ||!strncmp(cmdline, "pwd", 3) ||!strncmp(cmdline, "quit", 4) ||!strncmp(cmdline, "which", 5) ||!strncmp(cmdline, "export", 6) ||!strncmp(cmdline, "unset", 5)) {
+    printf("%s: dukesh built-in command", cmdline);
+  } else if (strlen(cmdline) >= 2 && cmdline[0] == '.' && cmdline[1] == '/') {
+    struct stat sb;
+      if (stat(cmdline, &sb) == 0 && sb.st_mode & S_IXUSR) {  //test this
+        print(cmdline);
+        return 0;
+      } else {
+        return 1;
+      }
+  } else {
+
+  }
   return 0;
 }
