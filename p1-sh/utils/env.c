@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <getopt.h>
 #include <spawn.h>
 #include <stdio.h>
@@ -29,33 +30,28 @@ main (int argc, char *argv[], char *envp[])
       enviornmentVariableCount++;
       optind++;
     }
-  char *tmpEnviornment[enviornmentVariableCount];
+  char *enviornment[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                          NULL, NULL, NULL, NULL, NULL, NULL };
   optind = tmp;
   // populate enviornment with the args
   while (strchr (argv[optind], '=') != NULL)
     {
-      tmpEnviornment[envpIndex] = argv[optind];
+      enviornment[envpIndex] = argv[optind];
       envpIndex++;
       optind++;
     }
-  char *const *enviornment = tmpEnviornment;
   // get program name
   // path string for finding files in printentry
-  char path[255];
-  getcwd (path, 256);
   char *program = argv[optind];
-  program += 1;
-  strncat(path, program, 100);
-  printf("%s\n", path);
   // construct args
   int argsCount = argc - optind;
-  char *tmpArguments[argsCount];
+  char *arguments[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                        NULL, NULL, NULL, NULL, NULL, NULL };
   for (int i = 0; i < argsCount; i++)
     {
-      tmpArguments[i] = argv[optind];
+      arguments[i] = argv[optind];
       optind++;
     }
-  char *const *arguments = tmpArguments;
   // spawn process
   posix_spawn_file_actions_t file_actions;
   pid_t child;
@@ -79,11 +75,11 @@ main (int argc, char *argv[], char *envp[])
   //     close (pipefd[1]);
   //     return EXIT_FAILURE;
   //   }
-  if (posix_spawn (&child, path, &file_actions, NULL, arguments,
+  if (posix_spawn (&child, program, &file_actions, NULL, arguments,
                    enviornment)
       != 0)
     {
-      printf ("spawn failed\n");
+      printf ("spawn failed. err: %d\n", errno);
       // close (pipefd[0]);
       // close (pipefd[1]);
       return EXIT_FAILURE;
