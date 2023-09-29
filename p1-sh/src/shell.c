@@ -162,32 +162,63 @@ run_child_process (char *command, char **arg_list, size_t argc,
       // setup_output_file (output_file);
       posix_spawn_file_actions_t file_actions;
       pid_t child;
-      int s = posix_spawn_file_actions_init (&file_actions);
-      if (s != 0)
+      // pipe | Read side is pipefd[0] | Write side is pipefd[1]
+      int pipefd[2];
+      pipe (pipefd);
+      // init file actions
+      if (posix_spawn_file_actions_init (&file_actions) != 0)
         {
           return;
         }
-      if (output_prgm)
+      // different things to do with pipe
+      if (output_prgm) // piping commands together
         {
           // pipe to this process, output_prgm in format of "head -n 10"
         }
+      else // fixing output streams
+        {
+          // add close for the read side of the pipe
+          if (posix_spawn_file_actions_addclose (&file_actions, pipefd[0])
+              != 0)
+            {
+              return;
+            }
+          // add dup2 for the pipe to redirect here
+          if (posix_spawn_file_actions_adddup2 (&file_actions, pipefd[1],
+                                                STDOUT_FILENO)
+              != 0)
+            {
+              return;
+            }
+        }
 
-      s = posix_spawn (&child, command, &file_actions, NULL, arg_list,
-                       NULL); // TODO - add envs
-      if (s != 0)
+      if (posix_spawn (&child, command, &file_actions, NULL, arg_list,
+                       NULL)
+          != 0) // TODO - add envs
         {
           return;
         }
-      s = posix_spawn_file_actions_destroy (&file_actions);
-      if (s != 0)
+      if (posix_spawn_file_actions_destroy (&file_actions) != 0)
         {
           return;
         }
       // Parent code: read the value back from the pipe into a dynamically
       // allocated buffer. Wait for the child to exit, then return the
       // buffer.
-      int status = -1;
+      // wait for child process to run before returning
+      int status;
       waitpid (child, &status, 0);
+
+      close (pipefd[1]);
+      char buffer[2048];
+      memset (buffer, 0, 2048);
+      while (read (pipefd[0], buffer, 2047) != 0)
+        {
+          printf ("%s", buffer);
+          memset (buffer, 0, 2048);
+        }
+      close (pipefd[0]);
+
       char statusString[3];
       snprintf (statusString, 3, "%d", WEXITSTATUS(status));
       hash_insert ("?", statusString);
