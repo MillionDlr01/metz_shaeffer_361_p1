@@ -186,10 +186,10 @@ run_child_process (char *command, char **arg_list, size_t argc,
       // Parent code: read the value back from the pipe into a dynamically
       // allocated buffer. Wait for the child to exit, then return the
       // buffer.
-      int status;
+      int status = -1;
       waitpid (child, &status, 0);
       char statusString[3];
-      snprintf (statusString, 3, "%d", status);
+      snprintf (statusString, 3, "%d", WEXITSTATUS(status));
       hash_insert ("?", statusString);
       if (status != 0)
         {

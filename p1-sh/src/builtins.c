@@ -32,7 +32,7 @@ echo (char *message)
     }
 
   // check for $ formats
-  /*char *dol = strchr (buffer, '$');
+  char *dol = strchr (buffer, '$');
   char temp[101];
   while (dol)
     {
@@ -40,6 +40,7 @@ echo (char *message)
       if (strlen (dol) >= 2 && dol[1] == '?')
         {
           dol[0] = '0' + strtol(hash_find ("?"), NULL, 10);
+          printf("%s\n", hash_find("?"));
           memmove (dol + 1, dol + 2, strlen (dol) - 1);
         }
       else if (strlen (dol) >= 2 && dol[1] == '{')
@@ -61,7 +62,8 @@ echo (char *message)
           return 1;
         }
       dol = strchr (dol + 1, '$');
-    }*/
+    }
+    //
   printf ("%s\n", buffer);
 
   return 0;
