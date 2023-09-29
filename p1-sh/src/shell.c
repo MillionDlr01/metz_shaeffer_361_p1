@@ -79,11 +79,26 @@ shell (FILE *input)
           free (arg_list);
           break;
         }
+      else if (!strncmp (command, "export", 6))
+        {
+          char returnstring[2];
+          int returnvalue = export (arg_list[1]);
+          snprintf (returnstring, 2, "%d", returnvalue);
+          hash_insert ("?", returnstring);
+        }
+      else if (!strncmp (command, "unset", 5))
+        {
+          char returnstring[2];
+          int returnvalue = unset (arg_list[1]);
+          snprintf (returnstring, 2, "%d", returnvalue);
+          hash_insert ("?", returnstring);
+        }
       else if (!strncmp (command, "cd", 2))
         {
+          int returnvalue;
           if (arg_list[1][0] == '/')
             {
-              chdir (arg_list[1]);
+              returnvalue = chdir (arg_list[1]);
             }
           else
             {
@@ -91,8 +106,12 @@ shell (FILE *input)
               getcwd (cwd, 256);
               strcat (cwd, "/");
               strcat (cwd, arg_list[1]);
-              chdir (cwd);
+              returnvalue = chdir (cwd);
             }
+          returnvalue = (returnvalue == 0 ? 0: 1);
+          char returnstring[2];
+          snprintf (returnstring, 2, "%d", returnvalue);
+          hash_insert ("?", returnstring);
         }
       else
         {
@@ -141,17 +160,9 @@ run_child_process (char *command, char **arg_list, size_t argc,
             {
               returnvalue = which (arg_list[1]);
             }
-          else if (!strncmp (command, "export", 6))
-            {
-              returnvalue = export (arg_list[1]);
-            }
-          else if (!strncmp (command, "unset", 5))
-            {
-              returnvalue = unset (arg_list[1]);
-            }
           char returnstring[2];
-          snprintf(returnstring, 2, "%d", returnvalue);
-          hash_insert("?", returnstring);
+          snprintf (returnstring, 2, "%d", returnvalue);
+          hash_insert ("?", returnstring);
           exit (0);
         }
       else
@@ -224,7 +235,7 @@ run_child_process (char *command, char **arg_list, size_t argc,
       close (pipefd[0]);
 
       char statusString[3];
-      snprintf (statusString, 3, "%d", WEXITSTATUS(status));
+      snprintf (statusString, 3, "%d", WEXITSTATUS (status));
       hash_insert ("?", statusString);
       if (status != 0)
         {

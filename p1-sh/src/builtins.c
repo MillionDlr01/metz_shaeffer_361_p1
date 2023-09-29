@@ -20,8 +20,8 @@
 int
 echo (char *message)
 {
-  char buffer[101]; // TODO - replace all white space with single space
-  strncpy (buffer, message, 100);
+  char buffer[1024]; // TODO - replace all white space with single space
+  strncpy (buffer, message, 255);
   // check for newline formats and no other escape
   char *newl = strstr (buffer, "\\n");
   while (newl)
@@ -39,13 +39,12 @@ echo (char *message)
       // do checks for ? or {}
       if (strlen (dol) >= 2 && dol[1] == '?')
         {
-          dol[0] = '0' + strtol(hash_find ("?"), NULL, 10);
-          printf("%s\n", hash_find("?"));
+          dol[0] = '0' + strtol (hash_find ("?"), NULL, 10);
           memmove (dol + 1, dol + 2, strlen (dol) - 1);
         }
       else if (strlen (dol) >= 2 && dol[1] == '{')
         {
-          size_t len = 0;
+          size_t len = 1;
           char *endbrace = strchr (dol, '}');
           char *dolt = dol + 2;
           while (dolt != endbrace)
@@ -53,9 +52,19 @@ echo (char *message)
               len += 1;
               dolt += 1;
             }
-          snprintf (temp, len, "%s", dol);
+          snprintf (temp, len, "%s", dol + 2);
           char *res = hash_find (temp);
-          // TODO - replace index with res
+          if (!res)
+            {
+
+              memmove (dol, endbrace + 1, strlen (endbrace + 1) + 1);
+            }
+          else
+            {
+              size_t vallen = strlen (res);
+              memmove (dol + vallen, endbrace + 1, vallen);
+              strncpy (dol, res, vallen);
+            }
         }
       else
         {
@@ -63,7 +72,6 @@ echo (char *message)
         }
       dol = strchr (dol + 1, '$');
     }
-    //
   printf ("%s\n", buffer);
 
   return 0;
