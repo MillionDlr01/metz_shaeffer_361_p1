@@ -59,43 +59,17 @@ main (int argc, char *argv[], char *envp[])
     {
       return EXIT_FAILURE;
     }
-  // int pipefd[2];
-  // pipe (pipefd);
-  // if (posix_spawn_file_actions_addclose (&file_actions, pipefd[0]) != 0)
-  //   {
-  //     close (pipefd[0]);
-  //     close (pipefd[1]);
-  //     return EXIT_FAILURE;
-  //   }
-  // if (posix_spawn_file_actions_adddup2 (&file_actions, pipefd[1],
-  //                                       STDOUT_FILENO)
-  //     != 0)
-  //   {
-  //     close (pipefd[0]);
-  //     close (pipefd[1]);
-  //     return EXIT_FAILURE;
-  //   }
   if (posix_spawn (&child, program, &file_actions, NULL, arguments,
                    enviornment)
       != 0)
     {
       printf ("spawn failed. err: %d\n", errno);
-      // close (pipefd[0]);
-      // close (pipefd[1]);
       return EXIT_FAILURE;
     }
   if (posix_spawn_file_actions_destroy (&file_actions) != 0)
     {
-      // close (pipefd[0]);
-      // close (pipefd[1]);
       return EXIT_FAILURE;
     }
-  // close (pipefd[1]);
-  // char buffer[2048];
-  // memset (buffer, 0, 2048);
-  // read (pipefd[0], buffer, 2047);
-  // printf ("%s", buffer);
-  // close (pipefd[0]);
   // wait for child process to run before returning
   waitpid (child, NULL, 0);
   return EXIT_SUCCESS;
