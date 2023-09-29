@@ -118,7 +118,7 @@ shell (FILE *input)
    Use posix spawn for utility files, and just call builtins*/
 void
 run_child_process (char *command, char **arg_list, size_t argc,
-                   char *output_file)
+                   char *output_prgm)
 {
   if (check_builtin (command))
     {
@@ -126,7 +126,6 @@ run_child_process (char *command, char **arg_list, size_t argc,
       pid_t child = fork ();
       if (child == 0)
         {
-          int out_fd = setup_output_file (output_file, true);
           if (!strncmp (command, "echo", 4))
             {
               char *collapsed = collapse_args (arg_list + 1, argc - 1);
@@ -140,11 +139,6 @@ run_child_process (char *command, char **arg_list, size_t argc,
           else if (!strncmp (command, "which", 5))
             {
               which (arg_list[1]);
-            }
-
-          if (out_fd > 0)
-            {
-              close (out_fd);
             }
           exit (0);
         }
@@ -161,20 +155,13 @@ run_child_process (char *command, char **arg_list, size_t argc,
       posix_spawn_file_actions_t file_actions;
       pid_t child;
       int s = posix_spawn_file_actions_init (&file_actions);
-      int out_fd = 0;
       if (s != 0)
         {
           return;
         }
-      if (output_file)
-        {
-          out_fd = setup_output_file (output_file, false);
-          s = posix_spawn_file_actions_adddup2 (&file_actions, out_fd, 1);
-          if (s != 0)
-            {
-              return;
-            }
-        }
+      if (output_prgm) {
+        //pipe to this process, output_prgm in format of "head -n 10"
+      }
 
       s = posix_spawn (&child, command, &file_actions, NULL, arg_list,
                        NULL); // TODO - add envs
@@ -195,10 +182,6 @@ run_child_process (char *command, char **arg_list, size_t argc,
       char statusString[3];
       snprintf (statusString, 3, "%d", status);
       hash_insert ("?", statusString);
-      if (out_fd > 0)
-        {
-          close (out_fd);
-        }
       if (status != 0)
         {
           return;
@@ -216,44 +199,17 @@ run_child_process (char *command, char **arg_list, size_t argc,
   exit (EXIT_FAILURE);
 }
 
-int
-setup_output_file (char *file, bool dup)
-{
-  int out_fd = -1;
-  /* If there is a specified output file, open it and redirect
-     STDOUT to write to this file */
-  if (file != NULL)
-    {
-      out_fd = open (file, O_RDWR | O_CREAT);
-      if (out_fd < 0)
-        {
-          fprintf (stderr, "-bash-lite: failed to open file %s\n", file);
-          exit (EXIT_FAILURE);
-        }
-
-      /* Make the file readable and redirect STDOUT */
-      fchmod (out_fd, 0644);
-      if (dup)
-        {
-          dup2 (out_fd, STDOUT_FILENO);
-        }
-      return out_fd;
-    }
-  return 0;
-}
-
 /* Given a command line (buffer), create the list of arguments to
    use for the child process. If the command line ends in an output
    redirection, update the output_file pointer to point to the name
    of the file to use. */
 char **
-tokenize_arguments (char *buffer, char **output_file,
+tokenize_arguments (char *buffer, char **ouput_prgm,
                     size_t *n) // put number of args in n
 {
   assert (buffer != NULL);
-  assert (output_file != NULL);
+  assert (ouput_prgm != NULL);
   char *token = NULL;
-  *n = 1;
 
   /* Allocate an initial array for 10 arguments; this can grow
      later if needed */
@@ -262,20 +218,19 @@ tokenize_arguments (char *buffer, char **output_file,
   assert (arguments != NULL);
 
   /* Leave the first space blank for the command name */
-  size_t arg_list_length = 1;
+  *n = 1;
 
   while ((token = strtok (NULL, WHITESPACE)) != NULL)
     {
-      *n = *n + 1;
       /* If token starts with >, it is an output redirection. The
          rest of the line must be the file name. Need to pass both
          the rest of the token and the buffer, as there might not
          be a space before the file name. */
-      if (token[0] == '>')
-        return get_out_name (&token[1], output_file, arguments);
+      if (token[0] == '|')
+        return get_out_name (&token[1], ouput_prgm, arguments);
 
       /* If current argument array is full, double its capacity */
-      if ((arg_list_length + 1) == arg_list_capacity)
+      if ((*n + 1) == arg_list_capacity)
         {
           arg_list_capacity *= 2;
           arguments = realloc (arguments, arg_list_capacity * sizeof (char *));
@@ -283,7 +238,7 @@ tokenize_arguments (char *buffer, char **output_file,
         }
 
       /* Add the token to the end of the argument list */
-      arguments[arg_list_length++] = token;
+      arguments[(*n)++] = token;
     }
 
   return arguments;
@@ -294,19 +249,20 @@ tokenize_arguments (char *buffer, char **output_file,
    next token on the command line. Note that all tokens after the
    output file name will be ignored. */
 char **
-get_out_name (char *token, char **output_file, char **arguments)
+get_out_name (char *token, char **output_prgm, char **arguments)
 {
   /* If token is not an empty string, it contains the output file
      name */
   if (strlen (token) != 0)
     {
-      *output_file = token;
+      *output_prgm = token;
       return arguments;
     }
 
   /* Token is empty, so there was a space after the '>' symbol.
      There should be one token left that is the file name. */
-  token = strtok (NULL, WHITESPACE);
+  // token = strchr(token + 2, '.');
+  token += 1;
   if (token == NULL)
     {
       /* This is an error, no file name was passed */
@@ -316,6 +272,6 @@ get_out_name (char *token, char **output_file, char **arguments)
 
   /* The last token is the file name, so return it and the argument
      list */
-  *output_file = token;
+  *output_prgm = token;
   return arguments;
 }
