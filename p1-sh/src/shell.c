@@ -126,28 +126,32 @@ run_child_process (char *command, char **arg_list, size_t argc,
       pid_t child = fork ();
       if (child == 0)
         {
+          int returnvalue = 1;
           if (!strncmp (command, "echo", 4))
             {
               char *collapsed = collapse_args (arg_list + 1, argc - 1);
-              echo (collapsed);
+              returnvalue = echo (collapsed);
               free (collapsed);
             }
           else if (!strncmp (command, "pwd", 3))
             {
-              pwd ();
+              returnvalue = pwd ();
             }
           else if (!strncmp (command, "which", 5))
             {
-              which (arg_list[1]);
+              returnvalue = which (arg_list[1]);
             }
           else if (!strncmp (command, "export", 6))
             {
-              export (arg_list[1]);
+              returnvalue = export (arg_list[1]);
             }
           else if (!strncmp (command, "unset", 5))
             {
-              unset (arg_list[1]);
+              returnvalue = unset (arg_list[1]);
             }
+          char returnstring[2];
+          snprintf(returnstring, 2, "%d", returnvalue);
+          hash_insert("?", returnstring);
           exit (0);
         }
       else
