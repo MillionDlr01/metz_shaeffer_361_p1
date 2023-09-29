@@ -42,7 +42,10 @@ main (int argc, char *argv[])
       for (int i = 0; i < numLines; i++)
         {
           memset (buffer, 0, LINELEN + 1);
-          fgets (buffer, MAXLENGTH, stdin);
+          if (fgets (buffer, MAXLENGTH, stdin) == EOF)
+            {
+              return 0;
+            }
           printf ("%s", buffer);
         }
     }

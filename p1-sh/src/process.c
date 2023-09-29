@@ -13,13 +13,13 @@
 
 #include "hash.h"
 
-//make sure to free the return value
+// make sure to free the return value
 char *
 path_lookup (char *filename)
 { // return the absolute path of the file found in the list of PATH
   // char *path = hash_find ("PATH");
-  char *path = hash_find("PATH");
-  char *curpath = calloc(128, sizeof(char));  
+  char *path = hash_find ("PATH");
+  char *curpath = calloc (128, sizeof (char));
   char *token;
   token = strtok (path, ":");
   while (token != NULL)
@@ -32,7 +32,7 @@ path_lookup (char *filename)
           // file exists
           return curpath;
         }
-      memset(curpath, 0, 128);
+      memset (curpath, 0, 128);
       token = strtok (NULL, ":");
     }
 

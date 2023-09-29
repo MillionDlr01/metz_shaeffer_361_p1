@@ -82,7 +82,7 @@ echo (char *message)
 //
 // Returns 0 on success, 1 for an invalid pair string (kvpair is NULL or
 // there is no '=' in the string).
-int export (char *kvpair)
+int export(char *kvpair) // checkstyle fails with the space
 {
   if (!kvpair)
     {

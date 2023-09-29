@@ -82,7 +82,7 @@ shell (FILE *input)
       else if (!strncmp (command, "export", 6))
         {
           char returnstring[2];
-          int returnvalue = export (arg_list[1]);
+          int returnvalue = export(arg_list[1]);
           snprintf (returnstring, 2, "%d", returnvalue);
           hash_insert ("?", returnstring);
         }
@@ -108,7 +108,7 @@ shell (FILE *input)
               strcat (cwd, arg_list[1]);
               returnvalue = chdir (cwd);
             }
-          returnvalue = (returnvalue == 0 ? 0: 1);
+          returnvalue = (returnvalue == 0 ? 0 : 1);
           char returnstring[2];
           snprintf (returnstring, 2, "%d", returnvalue);
           hash_insert ("?", returnstring);
@@ -178,8 +178,6 @@ run_child_process (char *command, char **arg_list, size_t argc,
       posix_spawn_file_actions_t file_actions;
       pid_t child;
       // pipe | Read side is pipefd[0] | Write side is pipefd[1]
-      int pipefd[2];
-      pipe (pipefd);
       // init file actions
       if (posix_spawn_file_actions_init (&file_actions) != 0)
         {
@@ -189,59 +187,148 @@ run_child_process (char *command, char **arg_list, size_t argc,
       if (output_prgm) // piping commands together
         {
           // pipe to this process, output_prgm in format of "head -n 10"
-        }
-      else // fixing output streams
-        {
-          // add close for the read side of the pipe
+          int pipefd[2];
+          pipe (pipefd);
           if (posix_spawn_file_actions_addclose (&file_actions, pipefd[0])
               != 0)
             {
               return;
             }
-          // add dup2 for the pipe to redirect here
           if (posix_spawn_file_actions_adddup2 (&file_actions, pipefd[1],
                                                 STDOUT_FILENO)
               != 0)
             {
               return;
             }
-        }
+          posix_spawn_file_actions_t pipe_file_actions;
+          pid_t pipe_child;
+          char tempbuf[101];
+          snprintf (tempbuf, strlen (output_prgm), "%s", output_prgm);
+          char *pipe_args[] = { NULL, NULL, NULL,
+                                NULL }; // ./bin/env A=5 ./bin/env | head -n 1
+          char tempprgm[101];
+          snprintf (tempprgm, 101, "%s", strtok (tempbuf, " "));
+          pipe_args[1] = strtok (NULL, " ");
+          pipe_args[2] = strtok (NULL, " ");
+          if (tempprgm[0] != '.')
+            {
+              char *true_path = path_lookup (tempprgm);
+              if (true_path == NULL)
+                {
+                  hash_insert ("?", "1");
+                  return;
+                }
+              char buf[128];
+              strncpy (buf, true_path, strlen (true_path));
+              pipe_args[0] = buf;
+              free (true_path);
+            }
+          else
+            {
+              pipe_args[0] = tempprgm;
+            }
 
-      if (posix_spawn (&child, command, &file_actions, NULL, arg_list,
-                       NULL)
-          != 0) // TODO - add envs
-        {
+          fflush (stdout);
+          if (posix_spawn_file_actions_init (&pipe_file_actions) != 0)
+            {
+              hash_insert ("?", "1");
+              return;
+            }
+          if (posix_spawn_file_actions_addclose (&pipe_file_actions, pipefd[1])
+              != 0)
+            {
+              hash_insert ("?", "1");
+              return;
+            }
+          if (posix_spawn_file_actions_adddup2 (&pipe_file_actions, pipefd[0],
+                                                STDIN_FILENO)
+              != 0)
+            {
+              hash_insert ("?", "1");
+              return;
+            }
+          if (posix_spawn (&child, command, &file_actions, NULL, arg_list,
+                           NULL)
+              != 0) // TODO - add envs
+            {
+              hash_insert ("?", "1");
+              return;
+            }
+          if (posix_spawn_file_actions_destroy (&file_actions) != 0)
+            {
+              hash_insert ("?", "1");
+              return;
+            }
+          waitpid (child, NULL, 0);
+          close (pipefd[1]);
+          int test;
+          char *posix_prgm_name = calloc (100, sizeof (char));
+          snprintf (posix_prgm_name, strlen (pipe_args[0]), "%s",
+                    pipe_args[0]);
+          if ((test = posix_spawn (&pipe_child, "/usr/bin/head",
+                                   &pipe_file_actions, NULL, pipe_args,
+                                   NULL))
+              != 0) // TODO - add envs
+            {
+              printf ("Spawn failed: %d\n", test);
+              printf ("%d\n", access ("/usr/bin/head", F_OK));
+              hash_insert ("?", "1");
+              free (posix_prgm_name);
+              return;
+            }
+          if (posix_spawn_file_actions_destroy (&pipe_file_actions) != 0)
+            {
+              hash_insert ("?", "1");
+              return;
+            }
+          int status;
+          waitpid (pipe_child, &status, 0);
+          char statusString[3];
+          snprintf (statusString, 3, "%d", WEXITSTATUS (status));
+          hash_insert ("?", statusString);
+          close (pipefd[0]);
+          close (pipefd[1]);
+          free (posix_prgm_name);
           return;
         }
-      if (posix_spawn_file_actions_destroy (&file_actions) != 0)
+      else // fixing output streams
         {
+
+          if (posix_spawn (&child, command, &file_actions, NULL, arg_list,
+                           NULL)
+              != 0) // TODO - add envs
+            {
+              return;
+            }
+          if (posix_spawn_file_actions_destroy (&file_actions) != 0)
+            {
+              return;
+            }
+          // Parent code: read the value back from the pipe into a dynamically
+          // allocated buffer. Wait for the child to exit, then return the
+          // buffer.
+          // wait for child process to run before returning
+          int status;
+          waitpid (child, &status, 0);
+
+          // char buffer[2048];
+          // memset (buffer, 0, 2048);
+          // while (read (pipefd[0], buffer, 2047) != 0)
+          //   {
+          //     printf ("%s", buffer);
+          //     memset (buffer, 0, 2048);
+          //   }
+          // close (pipefd[0]);
+
+          char statusString[3];
+          snprintf (statusString, 3, "%d", WEXITSTATUS (status));
+          hash_insert ("?", statusString);
+          if (status != 0)
+            {
+              return;
+            }
           return;
         }
-      // Parent code: read the value back from the pipe into a dynamically
-      // allocated buffer. Wait for the child to exit, then return the
-      // buffer.
-      // wait for child process to run before returning
-      int status;
-      waitpid (child, &status, 0);
-
-      close (pipefd[1]);
-      char buffer[2048];
-      memset (buffer, 0, 2048);
-      while (read (pipefd[0], buffer, 2047) != 0)
-        {
-          printf ("%s", buffer);
-          memset (buffer, 0, 2048);
-        }
-      close (pipefd[0]);
-
-      char statusString[3];
-      snprintf (statusString, 3, "%d", WEXITSTATUS (status));
-      hash_insert ("?", statusString);
-      if (status != 0)
-        {
-          return;
-        }
-      return;
     }
 
   /* OLD: Use execvp, because we are not doing a PATH lookup and the
@@ -283,7 +370,6 @@ tokenize_arguments (char *buffer, char **ouput_prgm,
          be a space before the file name. */
       if (token[0] == '|')
         return get_out_name (&token[1], ouput_prgm, arguments);
-
       /* If current argument array is full, double its capacity */
       if ((*n + 1) == arg_list_capacity)
         {

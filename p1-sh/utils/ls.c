@@ -91,11 +91,11 @@ printEntry (char *path, struct dirent *entry, int hiddenFlag, int sizeFlag)
       if (sizeFlag == 1) // print size of file
         {
           struct stat st;
-          char filename [(MAXLENGTH  + 2)* 2];
-          memset (filename, 0, (MAXLENGTH  + 2)* 2);
-          strncat(filename, path, MAXLENGTH);
-          strncat(filename, "/", MAXLENGTH);
-          strncat(filename, entry->d_name, MAXLENGTH);
+          char filename[(MAXLENGTH + 2) * 2];
+          memset (filename, 0, (MAXLENGTH + 2) * 2);
+          strncat (filename, path, MAXLENGTH);
+          strncat (filename, "/", MAXLENGTH);
+          strncat (filename, entry->d_name, MAXLENGTH);
           stat (filename, &st);
           long size = st.st_size;
           printf ("%ld ", size);
@@ -112,11 +112,11 @@ printEntry (char *path, struct dirent *entry, int hiddenFlag, int sizeFlag)
           if (sizeFlag == 1) // print size of file
             {
               struct stat st;
-              char filename [(MAXLENGTH  + 2)* 2];
-              memset (filename, 0, (MAXLENGTH  + 2)* 2);
-              strncat(filename, path, MAXLENGTH);
-              strncat(filename, "/", MAXLENGTH);
-              strncat(filename, entry->d_name, MAXLENGTH);
+              char filename[(MAXLENGTH + 2) * 2];
+              memset (filename, 0, (MAXLENGTH + 2) * 2);
+              strncat (filename, path, MAXLENGTH);
+              strncat (filename, "/", MAXLENGTH);
+              strncat (filename, entry->d_name, MAXLENGTH);
               stat (filename, &st);
               long size = st.st_size;
               printf ("%ld ", size);
