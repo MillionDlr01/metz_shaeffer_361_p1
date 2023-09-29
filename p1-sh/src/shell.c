@@ -224,7 +224,7 @@ run_child_process (char *command, char **arg_list, size_t argc,
       close (pipefd[0]);
 
       char statusString[3];
-      snprintf (statusString, 3, "%d", status);
+      snprintf (statusString, 3, "%d", WEXITSTATUS(status));
       hash_insert ("?", statusString);
       if (status != 0)
         {
