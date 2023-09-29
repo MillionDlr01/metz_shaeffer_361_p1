@@ -72,7 +72,24 @@ echo (char *message)
 //
 // Returns 0 on success, 1 for an invalid pair string (kvpair is NULL or
 // there is no '=' in the string).
-int export (char *kvpair) { return 0; }
+int export (char *kvpair)
+{
+  if (!kvpair)
+    {
+      return 1;
+    }
+  char buf[101];
+  snprintf (buf, 101, "%s", kvpair);
+  char *value = strchr (buf, '=');
+  if (!value)
+    {
+      return 1;
+    }
+  value += 1;
+  char *key = strtok (buf, "=");
+  hash_insert (key, value);
+  return 0;
+}
 
 // Prints the current working directory (see getcwd()). Returns 0.
 int
@@ -91,7 +108,7 @@ unset (char *key)
 {
   char *val = hash_find (key);
   if (!val || strncmp ("PATH", key, 4) == 0)
-    { // error if value is null, or key is CWD or PATH
+    { // error if value is null, or key is PATH
       return 1;
     }
   hash_remove (key);
@@ -154,13 +171,14 @@ which_helper (char *cmdline, char *buf)
     }
   else
     {
-      char *cmdpath = path_lookup(cmdline);
-          if (!cmdpath) {
-            return NULL;
-          }
-          snprintf(buf, strlen(cmdpath) + 1, "%s", cmdpath);
-          free(cmdpath);
-          return buf;
+      char *cmdpath = path_lookup (cmdline);
+      if (!cmdpath)
+        {
+          return NULL;
+        }
+      snprintf (buf, strlen (cmdpath) + 1, "%s", cmdpath);
+      free (cmdpath);
+      return buf;
     }
   return buf;
 }
